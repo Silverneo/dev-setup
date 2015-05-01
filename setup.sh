@@ -5,174 +5,212 @@
 # for fun
 
 # declare variables here 
-SCRIPT_NAME=$1
+SCRIPT_NAME="$(basename "${0}")"
 SCRIPT_VERSION="0.1"
-dev_path="/usr/bin/"
 
-if [ -e "$(which apt-get)" ]; then
-	PMAN="apt-get"
-elif [ -e "$(which yum)" ]; then
-	PMAN="yum"
-fi
-
-#npm package list . simply add one more you like
-npm-package-list() {
-	npm_install gulp
-	npm_install grunt
-	npm_install bower
-	npm_install mocha
-	npm_install testem
-	npm_install sails
-	npm_install express
-	npm_install surge
+# What distro am I?
+distro() {
+	head -n1 /etc/issue | awk '{print $1}'
 }
 
-# check for npm in path
-npm_av() {
-	if [ -e "$dev_path$npm" ]; then
-		npm-package-list
-	else
-		sudo $PMAN --purge remove nodejs*
-		node_install
-		npm-package-list
-	fi
-}
-
-#download package
-download() {
-	local dname=$1
-	echo -e "\033[1;33m installing $dname... \033[0m"
-	sudo $PMAN install "$dname"
-}
-
-# check is package already exist
-check_packgn() {
-	name=$1
-	if [ "$name" != "" ]; then
-		if [ -e "$dev_path$name" ]; then
-			echo -e "\033[1;37m ($name) :: already installed \033[0m"
-		else
-			echo -e "\033[1;32m ($name) :: not installed.\033[0m"
-			download "$name"
-		fi
-	else
-		echo -e "\033[0;31menter package name p_install() func \033[0m"
-	fi
-}
-
-# fix common error
-fix_common() {
-	echo "Fixing grunt wathc error..."
-	echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
-}
-
-#installing sublime-text
-sublime-install() {
-	local sublime="sublime-text"
-	if [ -e "$dev_path$sublime" ]; then
-		echo -e "\033[1;37m (sublime2) :: already installed \033[0m"
-	else
-		echo -e "\033[1;32m (sublime2) :: not installed. \033[0m"
-
-		if [ "$PMAN" = "yum" ]; then
-			sudo yum-config-manager --add-repo ppa:webupd8team/sublime-text-2;
-		else
-			sudo add-apt-repository ppa:webupd8team/sublime-text-2;
-		fi
-		sudo $PMAN update
-		sudo $PMAN --purge remove sublime-text*
-		sudo $PMAN install sublime-text
-	fi
-}
-
-#installing image magick 
-im_setup() {
-	if [ -e "$dev_path$imp" ]; then
-		echo -e "\033[1;37m (imagemagick) :: already installed \033[0m"
-	else
-		echo -e "\033[1;32m (imagemagick) :: not installed.\033[0m"
-		sudo $PMAN install imagemagick
-	fi
-}
-
-#installing npm packages
-npm_install() {
-	local pckgname=$1
-
-	if [ -e "$dev_path$pckgname" ]; then
-		echo -e "\033[1;37m ($pckgname) :: already installed \033[0m"
-	else
-		echo -e "\033[1;32m ($pckgname) :: not installed.\033[0m"
-		sudo npm install -g "$pckgname"
-	fi
-}
-
-# changing to zsh
-jump_to_zsh() {
-	case "$SHELL" in
-  	*/zsh) echo "You have zsh as default" ;;
-  	*)	echo -e "Changing your shell to zsh ..."
-      	chsh -s "$(which zsh)"
-    	;;
-	esac
-}
-
-# install zsh
-zsh_use() {
-	case "$(which zsh)" in
-		*/zsh) echo "Zsh installed"; jump_to_zsh ;;
-		*)  echo "Installing zsh" 
-			sudo $PMAN install zsh;
-			jump_to_zsh
-			echo "installing oh-my-zsh"
-			if [ -e "$(which wget)" ]; then
-				wget --no-check-certificate http://install.ohmyz.sh -O - | sh
-			else
-				curl -L http://install.ohmyz.sh | sh
+# Install specified package
+#
+# $1 = Package name to install
+# $2 = Additional repo to use (Ubuntu/CentOS/RedHat)
+#
+install_pkg() {
+	echo -e "\033[1;33m Installing ${1}... \033[0m"
+	case "$(distro)" in
+		Manjaro|Arch)
+			if ! which yaourt &>/dev/null; then
+				sudo pacman -S --noconfirm yaourt &>/dev/null
+			fi
+			if ! which "${1}" &>/dev/null; then
+				yaourt -Syy &>/dev/null
+				yaourt -S --noconfirm "${1}" &>/dev/null
+			fi
+			;;
+		Ubuntu)
+			if [ -n "${2}" ]; then
+				sudo add-apt-repository "${2}"
+			fi
+			if ! which "${1}" &>/dev/null; then
+				sudo apt-get update &>/dev/null
+				sudo apt-get install -y "${1}" &>/dev/null
+			fi
+			;;
+		RedHat|CentOS)
+			if [ -n "${2}" ]; then
+				sudo yum-config-manager --add-repo "${2}"
+			fi
+			if ! which "${1}" &>/dev/null; then
+				sudo yum update &>/dev/null
+				sudo yum install -y "${1}" &>/dev/null
 			fi
 			;;
 	esac
+	echo -e "\033[1;33m ${1} installed... \033[0m"
 }
 
-#installing node (tested in mint 13 x64)
-node_install() {
-	if [ -e "$(which nodejs)" ]; then
-		echo -e "\033[1;37m (nodejs) :: already installed \033[0m"
+# Uninstall specified package
+#
+# $1 = Package name to uninstall
+#
+uninstall_pkg() {
+	echo -e "\033[1;33m Removing ${1}... \033[0m"
+	case "$(distro)" in
+		Manjaro|Arch)
+			if which "${1}" &>/dev/null; then
+				yaourt -Rns --noconfirm "${1}" &>/dev/null
+			fi
+			;;
+		Ubuntu)
+			if which "${1}" &>/dev/null; then
+				sudo apt-get remove --purge -y "${1}" &>/dev/null
+			fi
+			;;
+		RedHat|CentOS)
+			if which "${1}" &>/dev/null; then
+				sudo yum remove --purge -y "${1}" &>/dev/null
+			fi
+			;;
+	esac
+	echo -e "\033[1;33m ${1} removed \033[0m"
+}
+
+# fix common error
+#
+# $1 = Setup vs Uninstall
+#
+fix_common() {
+	if [ -z "${1}" ]; then
+		echo "Fixing grunt watch error..."
+		echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 	else
-		echo -e "\033[1;32m (nodejs) :: not installed.\033[0m"
-		if [ -e "/usr/bin/curl" ]; then
-			curl -sL https://deb.nodesource.com/setup | sudo bash -
-			sudo $PMAN install -y nodejs
-		else
-			sudo $PMAN install curl;
-			curl -sL https://deb.nodesource.com/setup | sudo bash -
-			sudo $PMAN install -y nodejs
-		fi
+		sudo sed -i '/fs.inotify.max_user_watches=524288/d' /etc/sysctl.conf && sudo sysctl -p
 	fi
 }
 
-# package install
-p_install() {
-	check_packgn "$1"
+# Change login shell
+#
+# $1 = Shell to change to
+#
+change_shell() {
+	echo -e "Changing your shell to ${1} ..."
+	chsh -s "$(which "${1}")"
+}
+
+# Setup/Teardown zsh
+#
+# $1 = Setup vs Uninstall
+#
+zsh_use() {
+	if [ -z "${1}" ]; then
+		install_pkg zsh
+		change_shell zsh
+		echo "installing oh-my-zsh"
+		if which wget &>/dev/null; then
+			wget --no-check-certificate http://install.ohmyz.sh -O - | sh
+		else
+			curl -L http://install.ohmyz.sh | sh
+		fi
+	else
+		change_shell bash
+		uninstall_pkg zsh
+	fi
+}
+
+#npm package list . simply add one more you like
+#
+# $1 = Only filled if wanting to remove packages
+#
+npm_package_list() {
+	npm_install gulp "${1}"
+	npm_install grunt "${1}"
+	npm_install bower "${1}"
+	npm_install mocha "${1}"
+	npm_install testem "${1}"
+	npm_install sails "${1}"
+	npm_install express "${1}"
+	npm_install surge "${1}"
+}
+
+#installing/uninstalling npm packages
+#
+# $1 = package name to install
+# $2 = if not null, uninstall instead
+#
+npm_install() {
+	local pkgname="${1}"
+
+	if [ -z "${2}" ]; then
+		if which "${pkgname}" &>/dev/null; then
+			echo -e "\033[1;37m (${pkgname}) :: already installed \033[0m"
+		else
+			echo -e "\033[1;32m (${pkgname}) :: not installed; installing now \033[0m"
+			sudo npm install -g "${pkgname}"
+		fi
+	else
+		sudo npm uninstall "${pkgname}"
+	fi
+}
+
+# Setup/Teardown node
+#
+# $1 = Setup vs Uninstall
+#
+setup_node() {
+	if [ -z "${1}" ]; then
+		install_pkg nodejs
+		install_pkg npm
+		npm_package_list
+	else
+		npm_package_list uninstall
+		uninstall_pkg npm
+		uninstall_pkg nodejs
+	fi
+}
+
+# Setup/Teardown ruby
+#
+# $1 = Setup vs Uninstall
+#
+setup_ruby() {
+	if [ -z "${1}" ]; then
+		install_pkg ruby
+		sudo gem install sass
+		sudo gem install jekyll
+		sudo gem install compass --pre
+	else
+		sudo gem uninstall compass
+		sudo gem uninstall jekyll
+		sudo gem uninstall sass
+		uninstall_pkg ruby
+	fi
 }
 
 # basic setup
 basic_setup() {
-	local npm="npm"
-	local imp="convert"
-
 	echo -e "\033[1;30m- running basic setup..."
-	node_install
-	npm_av 
-	p_install ruby
-	p_install git
-	sublime-install
-	sudo gem install sass
-	sudo gem install jekyll
-	sudo gem install compass --pre
-	im_setup
+	setup_node
+	setup_ruby
+	install_pkg git
+	install_pkg sublime-text ppa:webupd8team/sublime-text-2;
+	install_pkg imagemagick
 	fix_common
 	zsh_use
+}
+
+# Cleanup
+cleanup() {
+	echo -e "\033[1;30m- Running cleanup..."
+	setup_node uninstall
+	setup_ruby uninstall
+	uninstall_pkg git
+	uninstall_pkg sublime-text
+	uninstall_pkg imagemagick
+	fix_common uninstall
+	zsh_use uninstall
 }
 
 echo -e "\033[1;30m(v$SCRIPT_VERSION)\033[0;35m hello, $USER! thx for using  $SCRIPT_NAME ..."
@@ -180,8 +218,14 @@ echo -e "\033[1;36mlets make some magic with your laptop ."
 echo -e "\033[1;36mwhat do you want? \033[1;33m[setup/remove]: \033[0m"
 read -p "   -> " setup_type;
 
-case $setup_type in  
-  setup|Setup|SETUP ) basic_setup ;; 
-  remove|Remove|REMOVE ) echo "Removing ..." ;; 
-  *) echo -e "\033[1;30m(error) \033[0;31muncorrect setup type.\033[0m" ;; 
+case $setup_type in
+	setup|Setup|SETUP)
+		basic_setup
+		;;
+	remove|Remove|REMOVE)
+		cleanup
+		;;
+	*)
+		echo -e "\033[1;30m(error) \033[0;31mIncorrect setup type.\033[0m"
+		;;
 esac

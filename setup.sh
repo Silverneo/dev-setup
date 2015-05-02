@@ -39,7 +39,7 @@ install_pkg() {
 				sudo apt-get install -y "${1}" &>/dev/null
 			fi
 			;;
-		RedHat|CentOS)
+		RedHat|"\S")
 			if [ -n "${2}" ]; then
 				sudo yum-config-manager --add-repo "${2}"
 			fi

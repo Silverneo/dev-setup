@@ -134,6 +134,7 @@ npm_package_list() {
 	npm_install sails "${1}"
 	npm_install express "${1}"
 	npm_install surge "${1}"
+    npm_install yo "${1}"
 }
 
 #installing/uninstalling npm packages

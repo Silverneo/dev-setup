@@ -1,12 +1,13 @@
 #!/bin/bash
-# MyAwesomeMachine
+# Script.sh
 # Simple and nice script that
 # help make your machine ready
 # for fun
 
-# declare variables here 
-SCRIPT_NAME="$(basename "${0}")"
+# declare variables here
+SCRIPT_NAME="setup.sh"
 SCRIPT_VERSION="0.1"
+SCRIPT_FLAG=$1
 
 # What distro am I?
 distro() {
@@ -140,6 +141,7 @@ npm_package_list() {
 # $1 = package name to install
 # $2 = if not null, uninstall instead
 #
+#
 npm_install() {
 	local pkgname="${1}"
 
@@ -213,19 +215,56 @@ cleanup() {
 	zsh_use uninstall
 }
 
-echo -e "\033[1;30m(v$SCRIPT_VERSION)\033[0;35m hello, $USER! thx for using  $SCRIPT_NAME ..."
-echo -e "\033[1;36mlets make some magic with your laptop ."
-echo -e "\033[1;36mwhat do you want? \033[1;33m[setup/remove]: \033[0m"
-read -p "   -> " setup_type;
+#
+# Display help message when noting is puted
+#
+usage() {
+    cat <<EOF
 
-case $setup_type in
-	setup|Setup|SETUP)
-		basic_setup
-		;;
-	remove|Remove|REMOVE)
-		cleanup
-		;;
-	*)
-		echo -e "\033[1;30m(error) \033[0;31mIncorrect setup type.\033[0m"
-		;;
+        Usage: setup.sh [options]
+
+        Options:
+            -s         Run setup of dev tools
+            -r         Remove intalled dev tools
+            -h         Display usage message
+
+        Built by @drKraken
+
+EOF
+}
+
+dialog () {
+    echo -e "\033[1;30m(v$SCRIPT_VERSION)\033[0;35m hello, $USER! thx for using  $SCRIPT_NAME ..."
+    echo -e "\033[1;36mlets make some magic with your laptop ."
+    echo -e "\033[1;36mwhat do you want? \033[1;33m[setup/remove/usage]: \033[0m"
+    read -p "   -> " setup_type;
+
+    case $setup_type in
+        setup|-s|-S)
+            basic_setup
+            ;;
+        remove|-r|-R)
+            cleanup
+            ;;
+        usage)
+            usage
+            ;;
+    esac
+}
+
+case $SCRIPT_FLAG in
+    -s|--setup )
+            basic_setup
+        ;;
+    -r|--remove )
+            cleanup
+        ;;
+    -h|--help )
+            usage
+        ;;
+    *)
+        dialog
+        ;;
+
+
 esac

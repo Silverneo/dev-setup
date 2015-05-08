@@ -11,10 +11,10 @@ With this script you can in one click install all tools, that you need for comfo
 
 It can be used on : 
 
-* Debian
-* Linux Mint
-* Ubuntu
-* Elementary OS
+* Debian (tested)
+* Linux Mint (tested)
+* Ubuntu (tested)
+* Elementary OS (not tested)
   and other deb-based distors
 
 # Install
@@ -27,6 +27,12 @@ If you dont have curl installed :
 
     sudo apt-get install curl;
     bash <(curl -s https://raw.githubusercontent.com/drKraken/setup.sh/master/setup.sh)
+
+If you want to make it executable as a command line function
+
+    curl -L https://raw.githubusercontent.com/drKraken/setup.sh/master/setup.sh -o /usr/local/bin/setup-sh && chmod +x /usr/local/bin/setup-sh
+
+
 
 # Usage 
 

@@ -1,8 +1,7 @@
 #!/bin/bash
-# Script.sh
-# Simple and nice script that
-# help make your machine ready
-# for fun
+# Forked from drKraken/dev-setup
+# Modified to fit my dev-setup
+# Considering to learn docker later :)
 
 # declare variables here
 SCRIPT_NAME="setup.sh"
